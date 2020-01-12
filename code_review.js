@@ -107,7 +107,7 @@ class suggestIntent extends Intent {
     this.context = new Context(suggestContext);
   }
 
-  sendRecap(conv,url){
+  sendSymptomHistory(conv,url){
     let symptomsHistory = [];
     let param = this.context.getMapParam(conv,["sex","age","userId"]);
     return Database.get(param.get("userId"),"symptoms")
@@ -124,7 +124,7 @@ class suggestIntent extends Intent {
   }
 
   getSuggestion(conv){
-    return this.sendRecap(conv,HttpRequest.urlGetSuggestion())
+    return this.sendSymptomHistory(conv,HttpRequest.urlGetSuggestion())
     .then((res)=>{
       return res;
     })
@@ -134,7 +134,7 @@ class suggestIntent extends Intent {
   }
 
   getDiagnosis(conv,userId){
-    return this.sendRecap(conv,HttpRequest.urlGetDiagnosis())
+    return this.sendSymptomHistory(conv,HttpRequest.urlGetDiagnosis())
       .then((res)=>{
         var today = new Date();
         var mm = today.getMonth() + 1;
@@ -151,14 +151,14 @@ class suggestIntent extends Intent {
   proceed(conv){
     return new Promise((resolve, reject)=>{
       let currentContext = this.context;
-      let param = this.context.getMapParam(conv,["current","nbSymptomsToSuggest","counter","nb_questions","nb_diseases","userId"]);
-      if(param.get("counter") === param.get("nb_questions") - 1){ // Nombre de suggestions fixé par l'utilisateur atteint
+      let param = this.context.getMapParam(conv,["current","symptomsLen","counter","nbSymptomsToSuggest","nbDiseases","userId"]);
+      if(param.get("counter") === param.get("nbSymptomsToSuggest") - 1){ // Nombre de suggestions fixé par l'utilisateur atteint
         this.getDiagnosis(conv,param.get("userId"))
             .then((res)=>{
               let diagnosis = res[1]
               var diagnosisLen = Object.keys(diagnosis.conditions).length;
               let diagnostic = "";
-              for (var i=0; i<param.get("nb_diseases") && i<diagnosisLen; i++){
+              for (var i=0; i<param.get("nbDiseases") && i<diagnosisLen; i++){
                 diagnostic+="You may suffering from " + diagnosis.conditions[i].common_name + " with a probability of  "
                              + diagnosis.conditions[i].probability.toString() +"\n";
               }
@@ -168,11 +168,11 @@ class suggestIntent extends Intent {
               Intent.close(conv,error);
             });
       }
-      else if(param.get("current") === param.get("nbSymptomsToSuggest") ){ // Demande d'une nouvelle vague de suggestions
+      else if(param.get("current") === param.get("symptomsLen") ){ // Demande d'une nouvelle vague de suggestions
         this.getSuggestion(conv)
             .then((symtomsToSuggest)=>{
               var len = Object.keys(symtomsToSuggest).length;
-              currentContext.set(conv,{'symtomsToSuggest': symtomsToSuggest, 'nbSymptomsToSuggest': len,'current':1,'counter': param.get("counter")+1});
+              currentContext.set(conv,{'symtomsToSuggest': symtomsToSuggest, 'symptomsLen': len,'current':1,'counter': param.get("counter")+1});
               resolve("Do you feel "+ symtomsToSuggest[0].name + " ?");
             })
             .catch((error)=>{
@@ -243,14 +243,14 @@ class App {
       var P2 = Database.get(userId,"infos")
               .then((snapshot)=>{
                   parameters = {'sex':snapshot.val().sex,'age':snapshot.val().age,
-                  'nb_questions':snapshot.val().user_preferences.nb_questions,'nb_diseases':snapshot.val().user_preferences.nb_diseases};
+                  'nbSymptomsToSuggest':snapshot.val().user_preferences.nbSymptomsToSuggest,'nbDiseases':snapshot.val().user_preferences.nbDiseases};
                   return parameters;
                 }).then((parameters)=>{
                    return this.initPhase.proceed(conv);
                 })
                 .then((res)=>{
                   var len = Object.keys(res).length;
-                  parameters.symtomsToSuggest = res;parameters.nbSymptomsToSuggest = len;parameters.current = 0;parameters.userId = userId;parameters.counter = 0;
+                  parameters.symtomsToSuggest = res;parameters.symptomsLen = len;parameters.current = 0;parameters.userId = userId;parameters.counter = 0;
                   return this.initPhase.context.set(conv,parameters);
                 }).catch((error)=>{
                     Intent.close(conv,error);
