@@ -168,7 +168,7 @@ class suggestIntent extends Intent {
             });
       }
       else{ // Suggestion du symptôme courant
-        currentContext.set(conv,{'current':param.get("counter")+ 1, 'counter': param.get("counter")+1});
+        currentContext.set(conv,{'current':param.get("current")+ 1, 'counter': param.get("counter")+1});
         resolve( "Do you feel "+ currentContext.get(conv,"symtomsToSuggest")[param.get("current")].name + " ?" );
       }
     })
