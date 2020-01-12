@@ -155,7 +155,7 @@ class suggestIntent extends Intent {
       if(param.get("counter") === param.get("nbSymptomsToSuggest") - 1){ // Nombre de suggestions fixé par l'utilisateur atteint
         this.getDiagnosis(conv,param.get("userId"))
             .then((res)=>{
-              let diagnosis = res[1]
+              let diagnosis = res[1];
               var diagnosisLen = Object.keys(diagnosis.conditions).length;
               let diagnostic = "";
               for (var i=0; i<param.get("nbDiseases") && i<diagnosisLen; i++){
