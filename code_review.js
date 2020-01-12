@@ -123,25 +123,13 @@ class suggestIntent extends Intent {
       });
   }
 
-  getSuggestion(conv){
-    return this.sendSymptomHistory(conv,HttpRequest.urlGetSuggestion())
-    .then((res)=>{
-      return res;
-    })
-    .catch((error)=>{
-      Intent.close(conv,error);
-    });
-  }
-
   getDiagnosis(conv,userId){
     return this.sendSymptomHistory(conv,HttpRequest.urlGetDiagnosis())
       .then((res)=>{
         var today = new Date();
         var mm = today.getMonth() + 1;
         let date = today.getDate() + ':' + mm + ':' + today.getFullYear() +' '+today.getHours()+':'+today.getMinutes();
-        let P1 = Database.push(userId,"diagnosis/"+date,res.conditions);
-        let P2 = new Promise((resolve,reject)=>resolve(res));
-        return Promise.all([P1,P2]);
+        return Database.push(userId,"diagnosis/"+date,res.conditions).then(()=> return res)
       })
       .catch((error)=>{
         Intent.close(conv,error);
@@ -155,12 +143,12 @@ class suggestIntent extends Intent {
       if(param.get("counter") === param.get("nbSymptomsToSuggest") - 1){ // Nombre de suggestions fixé par l'utilisateur atteint
         this.getDiagnosis(conv,param.get("userId"))
             .then((res)=>{
-              let diagnosis = res[1];
-              var diagnosisLen = Object.keys(diagnosis.conditions).length;
+              let result = res;
+              var diagnosisLen = Object.keys(result.conditions).length;
               let diagnostic = "";
               for (var i=0; i<param.get("nbDiseases") && i<diagnosisLen; i++){
-                diagnostic+="You may suffering from " + diagnosis.conditions[i].common_name + " with a probability of  "
-                             + diagnosis.conditions[i].probability.toString() +"\n";
+                diagnostic+="You may suffering from " + result.conditions[i].common_name + " with a probability of  "
+                             + result.conditions[i].probability.toString() +"\n";
               }
               resolve(diagnostic);
             })
@@ -169,7 +157,7 @@ class suggestIntent extends Intent {
             });
       }
       else if(param.get("current") === param.get("symptomsLen") ){ // Demande d'une nouvelle vague de suggestions
-        this.getSuggestion(conv)
+        this.sendSymptomHistory(conv,HttpRequest.urlGetSuggestion())
             .then((symtomsToSuggest)=>{
               var len = Object.keys(symtomsToSuggest).length;
               currentContext.set(conv,{'symtomsToSuggest': symtomsToSuggest, 'symptomsLen': len,'current':1,'counter': param.get("counter")+1});
