@@ -144,7 +144,7 @@ class suggestIntent extends Intent {
         this.getDiagnosis(conv,param.get("userId"))
             .then((res)=>{
               let result = res;
-              var diagnosisLen = Object.keys(result.conditions).length;
+              var diagnosisLen = (result.conditions).length;
               let diagnostic = "";
               for (var i=0; i<param.get("nbDiseases") && i<diagnosisLen; i++){
                 diagnostic+="You may suffering from " + result.conditions[i].common_name + " with a probability of  "
@@ -159,7 +159,7 @@ class suggestIntent extends Intent {
       else if(param.get("current") === param.get("symptomsLen") ){ // Demande d'une nouvelle vague de suggestions
         this.sendSymptomHistory(conv,HttpRequest.urlGetSuggestion())
             .then((symtomsToSuggest)=>{
-              var len = Object.keys(symtomsToSuggest).length;
+              var len = symtomsToSuggest.length;
               currentContext.set(conv,{'symtomsToSuggest': symtomsToSuggest, 'symptomsLen': len,'current':1,'counter': param.get("counter")+1});
               resolve("Do you feel "+ symtomsToSuggest[0].name + " ?");
             })
@@ -237,7 +237,7 @@ class App {
                    return this.initPhase.proceed(conv);
                 })
                 .then((res)=>{
-                  var len = Object.keys(res).length;
+                  var len = res.length;
                   parameters.symtomsToSuggest = res;parameters.symptomsLen = len;parameters.current = 0;parameters.userId = userId;parameters.counter = 0;
                   return this.initPhase.context.set(conv,parameters);
                 }).catch((error)=>{
